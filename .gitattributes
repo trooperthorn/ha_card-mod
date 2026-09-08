@@ -1,1 +1,4 @@
-dist/card-mod.js binary
+* text=auto eol=lf
+*.png binary
+*.gif binary
+*.jpg binary

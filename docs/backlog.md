@@ -30,10 +30,6 @@ The upstream `test/` docker-compose harness (configuration, dashboards and theme
 
 Run `test/hook-contract.test.ts` against the current stable tag and the next beta tag on the weekly schedule, and publish the result per release.
 
-## Bundle size budget
-
-`dist/card-mod.js` is 95,304 bytes. Add a CI check that fails above 110 KB so a dependency bump cannot double the bundle unnoticed.
-
 ## Accepted scanner finding: `ha-top-app-bar-fixed`
 
 `check_stale.py` flags the `ha-top-app-bar-fixed` patch in `src/patch/ha-panel-config.ts` under the 2026.6 frontend component post. At tag 20260826.6 the element still exists (`src/components/ha-top-app-bar-fixed.ts`) and `ha-panel-tools` renders it (`ha-panel-tools.ts:65`), so the patch stays. Re-check when the element is removed from the frontend; the `top-app-bar-fixed` theme type would then go with it.
