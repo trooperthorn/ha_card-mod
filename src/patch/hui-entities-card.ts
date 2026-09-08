@@ -15,7 +15,8 @@ class HuiEntitiesCardPatch extends ModdedElement {
 
     if (!retval?.values) return retval;
     const row = retval.values[1];
-    if (!row) return retval;
+    if (!(row instanceof Element)) return retval;
+    const rowEl = row as ModdedElement;
 
     const cls = config?.type
       ? `type-${config.type.replace?.(":", "-")}`
@@ -23,7 +24,7 @@ class HuiEntitiesCardPatch extends ModdedElement {
     const apply = async () => {
       await await_element(row);
       patch_object(row, ModdedElement);
-      apply_card_mod(row, "row", config?.card_mod, { config }, true, cls);
+      apply_card_mod(rowEl, "row", config?.card_mod, { config }, true, cls);
       row.addEventListener("ll-rebuild", apply);
     };
 

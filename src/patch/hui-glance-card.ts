@@ -7,8 +7,7 @@ Items in glance cards are not isolated like rows in entities cards, so the styli
 are somewhat limited. Therefore this patch creates a separate shadowRoot for each item.
 */
 
-// https://github.com/home-assistant/frontend/blob/8c39ed46a83e7e889c389af466c0fd1b07fbf6fd/src/panels/lovelace/cards/hui-glance-card.ts#L202-L211
-// https://github.com/home-assistant/frontend/blob/8c39ed46a83e7e889c389af466c0fd1b07fbf6fd/src/panels/lovelace/cards/hui-glance-card.ts#L231-L233
+// Copied from frontend 20260826.6 src/panels/lovelace/cards/hui-glance-card.ts (.entity div, .name, state-badge rules).
 const ENTITY_STYLES = `
 div {
   width: 100%;
@@ -18,7 +17,7 @@ div {
   text-overflow: ellipsis;
 }
 .name {
-  min-height: var(--paper-font-body1_-_line-height, 20px);
+  min-height: var(--ha-line-height-normal);
 }
 state-badge {
   margin: 8px 0;
@@ -49,8 +48,6 @@ class HuiGlanceCardPatch extends ModdedElement {
       styleTag.innerHTML = ENTITY_STYLES;
       root.append(styleTag);
 
-      // Thankfully the configuration data for the glance entity is added to the div for some reason
-      // https://github.com/home-assistant/frontend/blob/8c39ed46a83e7e889c389af466c0fd1b07fbf6fd/src/panels/lovelace/cards/hui-glance-card.ts#L275
       const config = el["config"] ?? el["entityConfig"];
       apply_card_mod(el as any, "glance", config?.card_mod, { config });
     }

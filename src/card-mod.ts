@@ -14,6 +14,7 @@ import {
   CardModStyle,
 } from "./helpers/apply_card_mod";
 import { compare_deep, merge_deep } from "./helpers/dict_functions";
+import { note_styles } from "./helpers/icon_usage";
 
 declare global {
   interface HTMLElementTagNameMap {
@@ -180,6 +181,8 @@ export class CardMod extends LitElement {
 
     // Save processed styles
     this._fixed_styles = styles;
+
+    note_styles(styles);
 
     this.refresh();
   }

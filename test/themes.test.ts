@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { theme_key_names, theme_styles_for_type } from "../src/helpers/themes";
+import {
+  resolve_theme_name,
+  theme_key_names,
+  theme_styles_for_type,
+} from "../src/helpers/themes";
 
 describe("theme key aliases", () => {
   it("lists the tools keys and the developer-tools alias", () => {
@@ -24,5 +28,21 @@ describe("theme key aliases", () => {
       {},
     );
     expect(theme_styles_for_type(undefined, "tools")).toEqual({});
+  });
+});
+
+describe("card-mod-theme indirection", () => {
+  const themes = {
+    active: { "card-mod-theme": "shared" },
+    dangling: { "card-mod-theme": "missing" },
+    shared: { "card-mod-card": "x" },
+  };
+  it("resolves to the named theme when it exists", () => {
+    expect(resolve_theme_name(themes, "active")).toBe("shared");
+  });
+  it("keeps the current theme when the target is missing or absent", () => {
+    expect(resolve_theme_name(themes, "dangling")).toBe("dangling");
+    expect(resolve_theme_name(themes, "shared")).toBe("shared");
+    expect(resolve_theme_name(themes, "nope")).toBe("nope");
   });
 });
