@@ -16,7 +16,7 @@ export class ModdedElement extends LitElement {
   updated(_orig, ...args) {
     _orig?.(...args);
     Promise.all([this.updateComplete]).then(() =>
-      this._cardMod.forEach((cm) => cm.refresh?.())
+      this._cardMod.forEach((cm) => cm.refresh?.()),
     );
   }
 }
@@ -33,10 +33,10 @@ interface CardModConfig {
 export async function apply_card_mod_compatible(
   element: ModdedElement,
   type: string,
-  cm_config: CardModStyle | CardModConfig = undefined, // or styles
+  cm_config: CardModStyle | CardModConfig | undefined = undefined, // or styles
   variables = {},
   shadow = true, // or deprecated
-  cls = undefined // or shadow
+  cls: string | boolean | undefined = undefined, // or shadow
 ) {
   // TODO: Remove in June 2024
   // This is for backwards compatibility with Card mod version 3.3 and earlier.
@@ -92,10 +92,10 @@ export async function apply_card_mod_compatible(
     (window as any).cm_compatibility_warning = true;
     console.groupCollapsed("Card-mod warning");
     console.info(
-      "You are using a custom card which relies on card-mod, and uses an outdated signature for applyToElement."
+      "You are using a custom card which relies on card-mod, and uses an outdated signature for applyToElement.",
     );
     console.info(
-      "The outdated signature will be removed at some point in the future. Hopefully the developer of your card will have updated their card by then."
+      "The outdated signature will be removed at some point in the future. Hopefully the developer of your card will have updated their card by then.",
     );
     console.info("The card used card-mod to apply styles here:", element);
     console.groupEnd();
@@ -107,14 +107,14 @@ export async function apply_card_mod_compatible(
 export async function apply_card_mod(
   element: ModdedElement,
   type: string,
-  cm_config: CardModConfig = undefined,
+  cm_config: CardModConfig | undefined = undefined,
   variables = {},
   shadow: boolean = true,
-  cls = undefined
+  cls: string | undefined = undefined,
 ) {
   const debug = cm_config?.debug
     ? (...msg) => console.log("CardMod Debug:", ...msg)
-    : (...msg) => {};
+    : () => {};
 
   debug(
     "Applying card-mod to:",
@@ -124,7 +124,7 @@ export async function apply_card_mod(
     "type: ",
     type,
     "configuration: ",
-    cm_config
+    cm_config,
   );
 
   if (!element) return;
@@ -160,11 +160,14 @@ export async function apply_card_mod(
     await Promise.all([element.updateComplete]);
 
     const target =
-      element.modElement ?? shadow ? element.shadowRoot ?? element : element;
+      (element.modElement ?? shadow)
+        ? (element.shadowRoot ?? element)
+        : element;
 
     if (!target.contains(cm as any)) {
       // Prepend if set or if Lit is in a buggy state
-      const litWorkaround = (element as any)?.renderOptions?.renderBefore === null;
+      const litWorkaround =
+        (element as any)?.renderOptions?.renderBefore === null;
       if (litWorkaround) debug("Lit prepend workaround applied for:", element);
       if (cm_config?.prepend || litWorkaround) {
         target.prepend(cm as any);

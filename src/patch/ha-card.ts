@@ -28,7 +28,7 @@ class HaCardPatch extends ModdedElement {
       config?.card_mod,
       { config },
       false,
-      cls
+      cls,
     );
 
     const parent = (this.parentNode as any)?.host;

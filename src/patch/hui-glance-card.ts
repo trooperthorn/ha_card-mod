@@ -34,7 +34,7 @@ class HuiGlanceCardPatch extends ModdedElement {
 
     // Each entity of a glance card is contained in a div.entity
     // Go through each and apply styling individually
-    for (const el of this.shadowRoot.querySelectorAll("ha-card div.entity")) {
+    for (const el of this.shadowRoot!.querySelectorAll("ha-card div.entity")) {
       patch_object(el, ModdedElement);
 
       // Create a shadowroot for each entity

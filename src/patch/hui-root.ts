@@ -16,7 +16,7 @@ const apply = () => {
   selectTree(
     document,
     "home-assistant$home-assistant-main$partial-panel-resolver ha-panel-lovelace$hui-root",
-    false
+    false,
   ).then((root) => root?.firstUpdated());
 };
 

@@ -1,4 +1,4 @@
-import { patch_element, patch_object } from "../helpers/patch_function";
+import { patch_element } from "../helpers/patch_function";
 import { apply_card_mod } from "../helpers/apply_card_mod";
 import { ModdedElement } from "../helpers/apply_card_mod";
 
@@ -18,7 +18,7 @@ class HuiGridSectionPatch extends ModdedElement {
       this._config.card_mod,
       { config: this._config },
       true,
-      "type-grid-section"
+      "type-grid-section",
     );
   }
 }
@@ -33,18 +33,19 @@ Patch the hui-section element to on first update:
 class HuiSectionPatch extends ModdedElement {
   async _createCards(_orig, ...args) {
     const strategyConfig = (this as LovelaceSection).config?.strategy;
-    const dynamicConfig: LovelaceSectionConfig | undefined = { ...args[0] };
-    if (strategyConfig && strategyConfig.card_mod) {
-      Object.entries(dynamicConfig.cards).forEach(([idx, card]) => {
-        if (card.type in strategyConfig.card_mod) {
+    const dynamicConfig: LovelaceSectionConfig = { ...args[0] };
+    if (strategyConfig?.card_mod && Array.isArray(dynamicConfig.cards)) {
+      const cards = dynamicConfig.cards;
+      cards.forEach((card, idx) => {
+        if (card.type && card.type in strategyConfig.card_mod) {
           strategyConfig.card_mod.debug &&
             console.log(
               "CardMod Debug: adding card-mod to card",
               card,
               "with",
-              strategyConfig.card_mod[card.type]
+              strategyConfig.card_mod[card.type],
             );
-          dynamicConfig.cards[idx] = {
+          cards[idx] = {
             ...card,
             card_mod: strategyConfig.card_mod[card.type],
           };

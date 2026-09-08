@@ -1,8 +1,8 @@
 // Add a listener to allow to clear Frontend cache via Home Assistant action
-window.addEventListener("card-mod-bootstrap", async (ev: CustomEvent) => {
+window.addEventListener("card-mod-bootstrap", (ev: Event) => {
   ev.stopPropagation();
-  document.addEventListener("ll-custom", (event: CustomEvent) => {
-    const detail = event.detail;
+  document.addEventListener("ll-custom", (event: Event) => {
+    const detail = (event as CustomEvent).detail;
     if (!detail || typeof detail !== "object") {
       return;
     }
@@ -11,12 +11,22 @@ window.addEventListener("card-mod-bootstrap", async (ev: CustomEvent) => {
       return;
     }
     const actionName = (cardMod as any).action;
-    if (actionName && typeof actionName === "string" && typeof Actions[actionName] === "function") {
+    if (
+      actionName &&
+      typeof actionName === "string" &&
+      typeof Actions[actionName] === "function"
+    ) {
       try {
         const result = (Actions as any)[actionName]();
-        if (result && typeof (result as Promise<unknown>).catch === "function") {
+        if (
+          result &&
+          typeof (result as Promise<unknown>).catch === "function"
+        ) {
           (result as Promise<unknown>).catch((error: unknown) => {
-            console.error(`Error while executing action "${actionName}":`, error);
+            console.error(
+              `Error while executing action "${actionName}":`,
+              error,
+            );
           });
         }
       } catch (error) {

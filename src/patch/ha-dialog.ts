@@ -6,8 +6,7 @@ import {
   set_patched,
 } from "../helpers/patch_function";
 
-
-const dialogParams = [];
+const dialogParams: Record<string, any> = {};
 
 class HaDialogPatch extends ModdedElement {
   async updated(_orig, args) {
@@ -15,19 +14,19 @@ class HaDialogPatch extends ModdedElement {
 
     this.updateComplete.then(async () => {
       let haDialog: HTMLElement | null =
-        this.shadowRoot.querySelector("ha-dialog");
+        this.shadowRoot!.querySelector("ha-dialog");
       if (!haDialog) {
-        haDialog = this.shadowRoot.querySelector("ha-adaptive-dialog");
+        haDialog = this.shadowRoot!.querySelector("ha-adaptive-dialog");
       }
       if (!haDialog) {
-        haDialog = this.shadowRoot.querySelector("ha-toast");
+        haDialog = this.shadowRoot!.querySelector("ha-toast");
       }
       if (!haDialog) {
-        haDialog = this.shadowRoot.querySelector("ha-adaptive-popover");
+        haDialog = this.shadowRoot!.querySelector("ha-adaptive-popover");
       }
       if (!haDialog) {
         // Notification 'dialog' is ha-drawer
-        haDialog = this.shadowRoot.querySelector("ha-drawer");
+        haDialog = this.shadowRoot!.querySelector("ha-drawer");
       }
       if (!haDialog) return;
 
@@ -38,7 +37,7 @@ class HaDialogPatch extends ModdedElement {
         undefined,
         { params: dialogParams[this.localName] ?? {} },
         false,
-        cls
+        cls,
       );
     });
   }
@@ -74,4 +73,6 @@ function patchNotification(ev: Event) {
 }
 
 window.addEventListener("show-dialog", patchDialog, { capture: true });
-window.addEventListener("hass-notification", patchNotification, { capture: true });
+window.addEventListener("hass-notification", patchNotification, {
+  capture: true,
+});

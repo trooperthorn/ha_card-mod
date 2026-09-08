@@ -23,9 +23,7 @@ export const yaml2json = (key: string, yaml: string): Record<string, any> => {
     console.log(
       String(yaml)
         .split("\n")
-        .map(
-          (line, i) => `${i === mark?.line ? ">>" : "  "}${i + 1}: ${line}`,
-        )
+        .map((line, i) => `${i === mark?.line ? ">>" : "  "}${i + 1}: ${line}`)
         .join("\n"),
     );
     console.groupEnd();

@@ -26,7 +26,7 @@ import "./mod-card";
 import "./theme-watcher";
 
 const scriptElements = document.querySelectorAll("script");
-const resources = [];
+const resources: string[] = [];
 for (const script of scriptElements) {
   if (script?.innerText?.trim()?.startsWith("import(")) {
     const imports = script.innerText.split("\n")?.map((e) => e.trim());
@@ -40,7 +40,7 @@ if (resources.some((r) => r.includes("/card-mod.js"))) {
   // console.info("Card-mod is loaded as a module");
 } else {
   console.info(
-    "You may not be getting optimal performance out of card-mod.\nSee https://github.com/thomasloven/lovelace-card-mod#performance-improvements"
+    "You may not be getting optimal performance out of card-mod.\nSee https://github.com/thomasloven/lovelace-card-mod#performance-improvements",
   );
 }
 

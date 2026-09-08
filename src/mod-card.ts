@@ -52,12 +52,12 @@ class ModCard extends LitElement {
       if (this.card?.shadowRoot?.querySelector("ha-card")) {
         console.info(
           "%cYou are doing it wrong!",
-          "color: red; font-weight: bold"
+          "color: red; font-weight: bold",
         );
-        let cardName = this.card.localName.replace(/hui-(.*)-card/, "$1");
+        const cardName = this.card.localName.replace(/hui-(.*)-card/, "$1");
 
         console.info(
-          `mod-card should NEVER be used with a card that already has a ha-card element, such as ${cardName}`
+          `mod-card should NEVER be used with a card that already has a ha-card element, such as ${cardName}`,
         );
       }
     }, 3000);

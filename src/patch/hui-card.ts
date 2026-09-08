@@ -1,16 +1,13 @@
-import { patch_element, patch_object } from "../helpers/patch_function";
+import { patch_element } from "../helpers/patch_function";
 
 import { apply_card_mod } from "../helpers/apply_card_mod";
 import { ModdedElement } from "../helpers/apply_card_mod";
 
-const EXCLUDED_CARDS = [
-  "conditional",
-  "entity-filter",
-];
+const EXCLUDED_CARDS = ["conditional", "entity-filter"];
 @patch_element("hui-card")
 class HuiCardPatch extends ModdedElement {
   _cardMod = [];
-  _element: ModdedElement;
+  _element!: ModdedElement;
   config;
 
   async _add_card_mod() {
@@ -27,7 +24,7 @@ class HuiCardPatch extends ModdedElement {
       config?.card_mod,
       { config },
       true,
-      cls
+      cls,
     );
   }
 

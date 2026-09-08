@@ -16,13 +16,12 @@ const apply = () => {
   selectTree(
     document,
     "home-assistant$home-assistant-main$ha-sidebar",
-    false
+    false,
   ).then((root) => root?.firstUpdated());
 };
 
 @patch_element("ha-sidebar", apply)
 class SidebarPatch extends ModdedElement {
-  // @ts-ignore
   firstUpdated(_orig, ...args) {
     _orig?.(...args);
     apply_card_mod(this, "sidebar");

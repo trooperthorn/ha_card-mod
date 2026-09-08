@@ -11,7 +11,7 @@ class PictureElementsCardPatch extends ModdedElement {
   setConfig(_orig, ...args) {
     _orig?.(...args);
 
-    const apply = async () => { 
+    const apply = async () => {
       for (const [i, el] of (this as any)._elements.entries()) {
         await await_element(el);
         patch_object(el, ModdedElement);
@@ -19,7 +19,7 @@ class PictureElementsCardPatch extends ModdedElement {
         const cls = `type-${config?.type?.replace?.(":", "-")}`;
         apply_card_mod(el, "element", config?.card_mod, { config }, true, cls);
       }
-    }
+    };
     Promise.all([this.updateComplete]).then(() => apply());
   }
 }
@@ -40,7 +40,7 @@ class HuiConditionalElementPatch extends ModdedElement {
         const cls = `type-${config?.type?.replace?.(":", "-")}`;
         apply_card_mod(el, "element", config?.card_mod, { config }, true, cls);
       }
-    }
+    };
     Promise.all([this.updateComplete]).then(() => apply());
   }
 }

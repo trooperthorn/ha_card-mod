@@ -37,7 +37,7 @@ export function theme_styles_for_type(
 }
 
 export async function get_theme(root: CardMod): Promise<CardModStyle> {
-  if (!root.type) return null;
+  if (!root.type) return {};
 
   await themesReady();
 

@@ -5,21 +5,32 @@ describe("yaml2json", () => {
   afterEach(() => vi.restoreAllMocks());
 
   it("parses a mapping", () => {
-    expect(yaml2json("card-mod-card-yaml", ".: |\n  ha-card { color: red; }\n")).toEqual({
+    expect(
+      yaml2json("card-mod-card-yaml", ".: |\n  ha-card { color: red; }\n"),
+    ).toEqual({
       ".": "ha-card { color: red; }\n",
     });
   });
 
   it("keeps keys ending in a dollar sign", () => {
-    expect(yaml2json("k", "foo$: bar\n\"a b$\": c\n")).toEqual({ foo$: "bar", "a b$": "c" });
+    expect(yaml2json("k", 'foo$: bar\n"a b$": c\n')).toEqual({
+      foo$: "bar",
+      "a b$": "c",
+    });
   });
 
   it("uses YAML 1.1 booleans like the frontend editor", () => {
-    expect(yaml2json("k", "a: yes\nb: no\nc: on\n")).toEqual({ a: true, b: false, c: true });
+    expect(yaml2json("k", "a: yes\nb: no\nc: on\n")).toEqual({
+      a: true,
+      b: false,
+      c: true,
+    });
   });
 
   it("returns an empty object for a non-mapping root", () => {
-    const group = vi.spyOn(console, "groupCollapsed").mockImplementation(() => {});
+    const group = vi
+      .spyOn(console, "groupCollapsed")
+      .mockImplementation(() => {});
     vi.spyOn(console, "log").mockImplementation(() => {});
     vi.spyOn(console, "groupEnd").mockImplementation(() => {});
     expect(yaml2json("k", "- a\n- b\n")).toEqual({});

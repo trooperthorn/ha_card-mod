@@ -1,6 +1,5 @@
 import pjson from "../../package.json";
 import { selectTree } from "./selecttree";
-import { simpleHash } from "./simple-hash";
 
 (window as any).cardMod_patch_state = (window as any).cardMod_patch_state || {};
 
@@ -12,7 +11,7 @@ const patch_method = function (obj, method, override) {
   if (method === "constructor") return;
   const original = obj[method];
 
-  const fn = function (...args) {
+  const fn = function (this: any, ...args) {
     try {
       return override.call(this, original?.bind(this), ...args);
     } catch (e) {
@@ -77,10 +76,6 @@ function log_patch_warning(key) {
 
   selectTree(document.body, "home-assistant").then((haEl) => {
     if (haEl?.hass) {
-      const userIdComponent =
-        haEl.hass.user?.name ?? haEl.hass.user?.id ?? "unknown_user";
-      const userAgentComponent =
-        typeof navigator !== "undefined" && navigator.userAgent;
       const info = `User: ${haEl.hass.user?.name || "unknown"}\n\nBrowser: ${navigator.userAgent}`;
       haEl.hass
         .callService(

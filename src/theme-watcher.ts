@@ -59,7 +59,9 @@ export function themesReady(): Promise<void> {
           settled = true;
           clearInterval(id);
           reject(
-            new Error("themesReady: Timeout waiting for themes to become ready")
+            new Error(
+              "themesReady: Timeout waiting for themes to become ready",
+            ),
           );
         }
       }, 30000); // 30 seconds
