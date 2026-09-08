@@ -1,15 +1,32 @@
 import { ModdedElement } from "../helpers/apply_card_mod";
 import { patch_element } from "../helpers/patch_function";
 import { CardMod } from "../card-mod";
+import { icon_vars_in_use } from "../helpers/icon_usage";
 
-/*
-Patch various icon elements to consider the following variables:
---card-mod-icon
---card-mod-icon-color
---card-mod-icon-dim
-*/
+// Icons honour --card-mod-icon, --card-mod-icon-color and --card-mod-icon-dim; work is skipped until a style uses them.
+const skipped: Set<any> = new Set();
+
+document.addEventListener("cm_icons_enabled", () => {
+  const pending = [...skipped];
+  skipped.clear();
+  for (const el of pending) {
+    if (!el.isConnected) continue;
+    el.cm_retries = 0;
+    bindCardMod(el);
+  }
+});
+
+const maybeBind = (el) => {
+  if (!icon_vars_in_use()) {
+    skipped.add(el);
+    return;
+  }
+  el.cm_retries = 0;
+  bindCardMod(el);
+};
 
 const updateIcon = (el) => {
+  if (!el.isConnected) return;
   const styles = window.getComputedStyle(el);
 
   const icon = styles.getPropertyValue("--card-mod-icon");
@@ -23,26 +40,36 @@ const updateIcon = (el) => {
 };
 
 const bindCardMod = async (el) => {
-  // Find the most relevant card-mods in order to listen to change events so we can react quickly
+  if (!el.isConnected) return;
+  if (el._bindCardModPending) return;
+  el._bindCardModPending = true;
+  try {
+    updateIcon(el);
+    el._boundCardMod = el._boundCardMod ?? new Set();
+    const newCardMods = await findParentCardMod(el);
 
-  updateIcon(el);
-  el._boundCardMod = el._boundCardMod ?? new Set();
-  const newCardMods = await findParentCardMod(el);
+    for (const cm of newCardMods) {
+      if (el._boundCardMod.has(cm)) continue;
 
-  for (const cm of newCardMods) {
-    if (el._boundCardMod.has(cm)) continue;
-
-    cm.addEventListener("card-mod-update", async () => {
-      await cm.updateComplete;
-      updateIcon(el);
-    });
-    el._boundCardMod.add(cm);
+      cm.addEventListener("card-mod-update", async () => {
+        if (el._updateIconPending) return;
+        el._updateIconPending = true;
+        try {
+          await cm.updateComplete;
+          updateIcon(el);
+        } finally {
+          el._updateIconPending = false;
+        }
+      });
+      el._boundCardMod.add(cm);
+    }
+  } finally {
+    el._bindCardModPending = false;
   }
 
-  // Find card-mod elements created later, increased interval
-  if (el.cm_retries < 5) {
+  if (el.isConnected && el.cm_retries < 5) {
     el.cm_retries++;
-    return window.setTimeout(() => bindCardMod(el), 250 * el.cm_retries);
+    window.setTimeout(() => bindCardMod(el), 250 * el.cm_retries);
   }
 };
 
@@ -51,8 +78,7 @@ class HaStateIconPatch extends ModdedElement {
   cm_retries = 0;
   updated(_orig, ...args) {
     _orig?.(...args);
-    this.cm_retries = 0;
-    bindCardMod(this);
+    maybeBind(this);
   }
 }
 
@@ -61,8 +87,7 @@ class HaIconPatch extends ModdedElement {
   cm_retries = 0;
   updated(_orig, ...args) {
     _orig?.(...args);
-    this.cm_retries = 0;
-    bindCardMod(this);
+    maybeBind(this);
   }
 }
 
@@ -72,8 +97,7 @@ class HaSvgIconPatch extends ModdedElement {
   updated(_orig, ...args) {
     _orig?.(...args);
     if ((this.parentNode as any)?.host?.localName === "ha-icon") return;
-    this.cm_retries = 0;
-    bindCardMod(this);
+    maybeBind(this);
   }
 }
 
@@ -82,7 +106,7 @@ function joinSet(dst: Set<any>, src: Set<any>) {
 }
 
 async function findParentCardMod(node: any, step = 0): Promise<Set<CardMod>> {
-  let cardMods: Set<CardMod> = new Set();
+  const cardMods: Set<CardMod> = new Set();
   if (step == 10) return cardMods;
   if (!node) return cardMods;
 

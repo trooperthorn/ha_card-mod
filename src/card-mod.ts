@@ -14,6 +14,7 @@ import {
   CardModStyle,
 } from "./helpers/apply_card_mod";
 import { compare_deep, merge_deep } from "./helpers/dict_functions";
+import { note_styles } from "./helpers/icon_usage";
 
 declare global {
   interface HTMLElementTagNameMap {
@@ -21,31 +22,33 @@ declare global {
   }
 }
 
+let themeWarningLogged = false;
+
 export class CardMod extends LitElement {
-  @property({ attribute: "card-mod-type", reflect: true }) type: string;
+  @property({ attribute: "card-mod-type", reflect: true }) type!: string;
   variables: any;
   dynamicVariablesHaveChanged: boolean = false;
-  card_mod_children: Record<string, Array<Promise<CardMod>>> = {};
+  card_mod_children: Record<
+    string,
+    Promise<Array<Promise<CardMod | undefined>> | void>
+  > = {};
   card_mod_parent?: CardMod = undefined;
   card_mod_class?: string = undefined;
   classes: string[] = [];
 
   debug: boolean = false;
 
-  card_mod_input: CardModStyle;
+  card_mod_input!: CardModStyle;
   _fixed_styles: Record<string, CardModStyle> = {};
   _styles: string = "";
   _processStylesOnConnect: boolean = false;
   @property() _rendered_styles: string = "";
-  _renderer: (_: string) => void;
+  _renderer!: (_: string) => void;
 
-  _cancel_style_child = [];
+  _cancel_style_child: Array<(reason?: any) => void> = [];
 
   _observer: MutationObserver = new MutationObserver((mutations) => {
-    // MutationObserver to keep track of any changes to the parent element
-    // e.g. when elements are changed after creation.
-    // The observer is activated in _connect() only if there are any styles
-    //  which should be applied to children
+    // Observes the parent for child changes; only active while child paths are styled.
     if (this.debug) {
       this._debug("Mutations observed:", mutations);
     }
@@ -67,39 +70,39 @@ export class CardMod extends LitElement {
   });
 
   static get applyToElement() {
-    // This gets the compatibility wrapper for backwards compatibility with card-mod 3.3.
-    // The wrapper should be removed at earliest June 2024, or if card-mod 4.0 is released
+    // Public entry point for other cards; accepts the card-mod 3.3 signature.
     return apply_card_mod_compatible;
   }
 
-  constructor() {
-    super();
-
-    // cm_update is issued when themes are reloaded
-    document.addEventListener("cm_update", (ev: CustomEvent) => {
-      // Don't process disconnected elements
-      this.dynamicVariablesHaveChanged = ev.detail?.variablesChanged || false;
-      if (!this.isConnected) {
-        this._processStylesOnConnect = true;
-        return;
-      }
-      this._process_styles(this.card_mod_input);
-    });
-  }
+  _cmUpdateListener = (ev: Event) => {
+    this.dynamicVariablesHaveChanged =
+      (ev as CustomEvent).detail?.variablesChanged || false;
+    if (!this.isConnected) {
+      this._processStylesOnConnect = true;
+      return;
+    }
+    this._process_styles(this.card_mod_input).catch((e) =>
+      this._debug("_process_styles failed:", e),
+    );
+  };
 
   connectedCallback() {
     super.connectedCallback();
+    document.addEventListener("cm_update", this._cmUpdateListener);
     if (this._processStylesOnConnect) {
       this._processStylesOnConnect = false;
-      this._debug("Processing styles on (Re)connect:", 
+      this._debug(
+        "Processing styles on (Re)connect:",
         "type:",
         this.type,
         "for:",
         ...((this as any)?.parentNode?.host
-        ? ["#shadow-root of:", (this as any)?.parentNode?.host]
-        : [this.parentElement ?? this.parentNode]),
+          ? ["#shadow-root of:", (this as any)?.parentNode?.host]
+          : [this.parentElement ?? this.parentNode]),
       );
-      this._process_styles(this.card_mod_input);
+      this._process_styles(this.card_mod_input).catch((e) =>
+        this._debug("_process_styles failed:", e),
+      );
     } else {
       this.refresh();
     }
@@ -112,6 +115,12 @@ export class CardMod extends LitElement {
   disconnectedCallback() {
     super.disconnectedCallback();
     this._disconnect();
+    // DOM moves disconnect and reconnect synchronously; only a node still detached afterwards unsubscribes.
+    Promise.resolve().then(() => {
+      if (this.isConnected) return;
+      document.removeEventListener("cm_update", this._cmUpdateListener);
+      this._processStylesOnConnect = true;
+    });
   }
 
   set styles(stl: CardModStyle) {
@@ -123,7 +132,9 @@ export class CardMod extends LitElement {
       this._processStylesOnConnect = true;
       return;
     }
-    this._process_styles(stl);
+    this._process_styles(stl).catch((e) =>
+      this._debug("_process_styles failed:", e),
+    );
   }
 
   get styles(): CardModStyle {
@@ -145,15 +156,29 @@ export class CardMod extends LitElement {
   }
 
   private async _process_styles(stl) {
-    let styles =
-      typeof stl === "string" || stl === undefined ? { ".": stl ?? "" } : JSON.parse(JSON.stringify(stl));
+    const styles =
+      typeof stl === "string" || stl === undefined
+        ? { ".": stl ?? "" }
+        : JSON.parse(JSON.stringify(stl));
 
-    // Merge card_mod styles with theme styles
-    const theme_styles = await get_theme(this);
+    let theme_styles: CardModStyle = {};
+    try {
+      theme_styles = (await get_theme(this)) ?? {};
+    } catch (e) {
+      if (!themeWarningLogged) {
+        themeWarningLogged = true;
+        console.warn(
+          "CARD-MOD: theme styles unavailable, applying card_mod config only:",
+          e,
+        );
+      }
+    }
     merge_deep(styles, theme_styles);
 
     // Save processed styles
     this._fixed_styles = styles;
+
+    note_styles(styles);
 
     this.refresh();
   }
@@ -161,17 +186,17 @@ export class CardMod extends LitElement {
   private async _style_child(
     path: string,
     style,
-    retries = 0
-  ): Promise<Array<Promise<CardMod>>> {
+    retries = 0,
+  ): Promise<Array<Promise<CardMod | undefined>>> {
     const parent = this.parentElement || this.parentNode;
     const elements = await selectTree(parent, path, true);
     if (!elements || !elements.length) {
       if (retries > 5) throw new Error("NoElements");
-      let timeout = new Promise((resolve, reject) => {
+      const timeout = new Promise((resolve, reject) => {
         setTimeout(resolve, retries * 100);
         this._cancel_style_child.push(reject);
       });
-      await timeout.catch((e) => {
+      await timeout.catch(() => {
         throw new Error("Cancelled");
       });
       return this._style_child(path, style, retries + 1);
@@ -183,7 +208,7 @@ export class CardMod extends LitElement {
         `${this.type}-child`,
         { style, debug: this.debug },
         this.variables,
-        false
+        false,
       );
       if (cm) cm.card_mod_parent = this;
       return cm;
@@ -193,18 +218,22 @@ export class CardMod extends LitElement {
   private async _connect() {
     const styles = this._fixed_styles ?? {};
 
-    const styleChildren = {};
+    const styleChildren: Record<
+      string,
+      Promise<Array<Promise<CardMod | undefined>> | void>
+    > = {};
     let thisStyle = "";
     let hasChildren = false;
 
-    this._debug("(Re)connecting:",
+    this._debug(
+      "(Re)connecting:",
       "type:",
       this.type,
       "to:",
       ...((this as any)?.parentNode?.host
-      ? ["#shadow-root of:", (this as any)?.parentNode?.host]
-      : [this.parentElement ?? this.parentNode]),
-      );
+        ? ["#shadow-root of:", (this as any)?.parentNode?.host]
+        : [this.parentElement ?? this.parentNode]),
+    );
 
     this.cancelStyleChild();
 
@@ -228,7 +257,7 @@ export class CardMod extends LitElement {
           if (e.message == "Cancelled") {
             if (this.debug) {
               console.groupCollapsed(
-                "card-mod style_child cancelled while looking for elements"
+                "card-mod style_child cancelled while looking for elements",
               );
               console.info(`Looked for ${key}`);
               console.info(this);
@@ -245,7 +274,8 @@ export class CardMod extends LitElement {
     for (const key in this.card_mod_children) {
       if (!styleChildren[key]) {
         (await this.card_mod_children[key])?.forEach(
-          async (ch) => await ch.then((cm) => (cm.styles = "")).catch(() => {})
+          async (ch) =>
+            await ch.then((cm) => cm && (cm.styles = "")).catch(() => {}),
         );
       }
     }
@@ -284,7 +314,6 @@ export class CardMod extends LitElement {
     } else {
       this._style_rendered(this._styles || "");
     }
-
   }
 
   private async _disconnect() {
@@ -318,15 +347,12 @@ if (!customElements.get("card-mod")) {
   customElements.define("card-mod", CardMod);
   console.info(
     `%cCARD-MOD ${pjson.version} IS INSTALLED`,
-    "color: green; font-weight: bold"
+    "color: green; font-weight: bold",
   );
   window.dispatchEvent(new Event("card-mod-bootstrap"));
 }
 (async () => {
-  // Wait for scoped customElements registry to be set up
-  // and then redefine card-mod if necessary
-  // otherwise the customElements registry card-mod is defined in
-  // may get overwritten by the polyfill if card-mod is loaded as a module
+  // Re-define card-mod once the scoped registry polyfill has replaced customElements.
   while (customElements.get("home-assistant") === undefined)
     await new Promise((resolve) => window.setTimeout(resolve, 100));
 

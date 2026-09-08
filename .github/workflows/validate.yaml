@@ -1,0 +1,66 @@
+name: Validate
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_call:
+  schedule:
+    # Weekly, so toolchain, frontend-tag and HACS validation drift surfaces without a push.
+    - cron: "17 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Lint, test, build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1, resolved 2026-09-08
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0, resolved 2026-09-08
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1, resolved 2026-09-08
+        with:
+          name: card-mod
+          path: dist/card-mod.js
+
+  dist-in-sync:
+    # dist/card-mod.js is committed so HACS can install from a git tree as
+    # well as from release assets. A committed dist that no longer matches
+    # the source is worse than none, so drift fails CI.
+    name: Committed dist matches a fresh build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1, resolved 2026-09-08
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0, resolved 2026-09-08
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - name: Fail on drift
+        run: |
+          if ! git diff --exit-code -- dist; then
+            echo "dist/card-mod.js is stale: run npm run build and commit the result" >&2
+            exit 1
+          fi
+
+  hacs:
+    # Informational: hacs/action also enforces default-store requirements
+    # (repository description, topics) that are GitHub settings, not repo content.
+    name: HACS validation (informational)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1, resolved 2026-09-08
+      - uses: hacs/action@1ebf01c408f29afcb6406bd431bc98fd8cbb15aa # main HEAD, resolved 2026-09-08 (hacs/action publishes no release tags)
+        with:
+          category: plugin

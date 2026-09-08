@@ -68,14 +68,12 @@ class HuiDialogEditCardPatch extends LitElement {
       this._cardModIcon.icon = "mdi:brush";
     }
 
-    const button = this.shadowRoot.querySelector(
-      "ha-button[slot=secondaryAction]"
+    const button = this.shadowRoot!.querySelector(
+      "ha-button[slot=secondaryAction]",
     );
     if (!button) return;
     button.appendChild(this._cardModIcon);
-    if (
-      JSON.stringify(this._cardConfig)?.includes("card_mod")
-    ) {
+    if (JSON.stringify(this._cardConfig)?.includes("card_mod")) {
       this._cardModIcon.style.visibility = "visible";
     } else {
       this._cardModIcon.style.visibility = "hidden";

@@ -15,19 +15,18 @@ import "./patch/hui-picture-elements-card";
 import "./patch/ha-icon";
 import "./patch/hui-view";
 import "./patch/hui-root";
-// To include in 4.2.2 and leave 4.2.1 just as a bugfix release for the 4.2.0 duplicate patching warning
-// import "./patch/ha-drawer";
+import "./patch/ha-drawer";
 import "./patch/ha-dialog";
 import "./patch/ha-more-info-dialog";
 import "./patch/ha-sidebar";
 import "./patch/hui-card-element-editor";
 import "./patch/ha-panel-config";
-import "./patch/ha-panel-developer-tools";
+import "./patch/ha-panel-tools";
 import "./mod-card";
 import "./theme-watcher";
 
 const scriptElements = document.querySelectorAll("script");
-const resources = [];
+const resources: string[] = [];
 for (const script of scriptElements) {
   if (script?.innerText?.trim()?.startsWith("import(")) {
     const imports = script.innerText.split("\n")?.map((e) => e.trim());
@@ -37,35 +36,8 @@ for (const script of scriptElements) {
   }
 }
 
-if (resources.some((r) => r.includes("/card-mod.js"))) {
-  // console.info("Card-mod is loaded as a module");
-} else {
+if (!resources.some((r) => r.includes("/card-mod.js"))) {
   console.info(
-    "You may not be getting optimal performance out of card-mod.\nSee https://github.com/thomasloven/lovelace-card-mod#performance-improvements"
+    "You may not be getting optimal performance out of card-mod.\nSee https://github.com/thomasloven/lovelace-card-mod#performance-improvements",
   );
 }
-
-// const get_paths = (root, basepath = "") => {
-//   let paths = {};
-//   paths[`${basepath}`] = root;
-//   if (root.shadowRoot) {
-//     const pth = `${basepath} $`;
-//     paths[pth] = root.shadowRoot;
-//     const p = get_paths(root.shadowRoot, pth);
-//     Object.entries(p).forEach(([k, v]) => {
-//       if (paths[k] === undefined) paths[k] = v;
-//     });
-//   }
-//   for (const el of root.children) {
-//     const pth = `${basepath} ${el.localName}`;
-//     paths[pth] = el;
-//     const p = get_paths(el, pth);
-//     Object.entries(p).forEach(([k, v]) => {
-//       if (paths[k] === undefined) paths[k] = v;
-//     });
-//   }
-
-//   return paths;
-// };
-
-// (window as any).get_paths = get_paths;
