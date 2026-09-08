@@ -2,10 +2,6 @@ import { ModdedElement, apply_card_mod } from "../helpers/apply_card_mod";
 import { patch_element, patch_object } from "../helpers/patch_function";
 import { await_element } from "../helpers/selecttree";
 
-/*
-Patch the hui-picture-elements-card specifically in order to handle individual styling of each element
-*/
-
 @patch_element("hui-picture-elements-card")
 class PictureElementsCardPatch extends ModdedElement {
   setConfig(_orig, ...args) {
@@ -24,10 +20,7 @@ class PictureElementsCardPatch extends ModdedElement {
   }
 }
 
-/*
-Patch conditional element specifically as it creates elements dynamically
-*/
-
+// Conditional elements create their inner element dynamically.
 @patch_element("hui-conditional-element")
 class HuiConditionalElementPatch extends ModdedElement {
   setConfig(_orig, ...args) {

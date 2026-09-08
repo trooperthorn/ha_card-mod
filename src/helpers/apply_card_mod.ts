@@ -39,27 +39,7 @@ export async function apply_card_mod_compatible(
   shadow = true, // or deprecated
   cls: string | boolean | undefined = undefined, // or shadow
 ) {
-  // TODO: Remove in June 2024
-  // This is for backwards compatibility with Card mod version 3.3 and earlier.
-  // Do not remove this before June 2024 unless Card-mod 4.0 is released.
-
-  // Wrapper for backwards compatibility (with deprecation warning)
-  // Old signature:
-  //   el: Node
-  //   type: string
-  //   styles: CardModStyle = ""
-  //   variables: object = {}
-  //   _: any = null
-  //   shadow: boolean = true
-  //
-  // New signature
-  //   el: Node
-  //   type: string
-  //   cm_config: CardModConfig
-  //   variables: object = {}
-  //   shadow: boolean = true
-  //   cls: str = undefined
-
+  // Accepts the card-mod 3.3 signature (styles, variables, _, shadow); see docs/design.md.
   let oldStyle = false;
   if (cls !== undefined) {
     if (typeof cls !== "string") {
@@ -162,7 +142,6 @@ export async function apply_card_mod(
   cm.card_mod_class = cls;
   cm.debug = cm_config?.debug ?? false;
   cm.cancelStyleChild();
-  // (cm as any).setAttribute("card-mod-type", type);
 
   if (!element._cardMod.includes(cm)) element._cardMod.push(cm);
 

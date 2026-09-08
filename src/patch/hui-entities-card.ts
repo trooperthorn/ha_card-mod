@@ -3,10 +3,7 @@ import { apply_card_mod } from "../helpers/apply_card_mod";
 import { await_element } from "../helpers/selecttree";
 import { ModdedElement } from "../helpers/apply_card_mod";
 
-/*
-Patch the hui-entities-card specifically in order to handle individual styling of each row
-*/
-
+// Rows are styled individually; the row element is values[1] of the _renderEntity template.
 @patch_element("hui-entities-card")
 class HuiEntitiesCardPatch extends ModdedElement {
   _renderEntity(_orig, config, ...rest) {
@@ -34,10 +31,7 @@ class HuiEntitiesCardPatch extends ModdedElement {
   }
 }
 
-/*
-Patch conditional row specifically as it creates rows dynamically
-*/
-
+// Conditional rows create their inner row dynamically.
 @patch_element("hui-conditional-row")
 class HuiConditionalRowPatch extends ModdedElement {
   _element;

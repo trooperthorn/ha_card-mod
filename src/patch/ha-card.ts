@@ -2,13 +2,6 @@ import { patch_element, patch_object } from "../helpers/patch_function";
 import { apply_card_mod } from "../helpers/apply_card_mod";
 import { ModdedElement } from "../helpers/apply_card_mod";
 
-/*
-Patch the ha-card element to on first update:
-- if it's parent is a hui-card, do nothing (as that is already handled in hui-card patch)
-- try to find the config parameter of it's parent element
-- Apply card_mod styles according to that config
-*/
-
 @patch_element("ha-card")
 class HaCardPatch extends ModdedElement {
   _cardMod = [];

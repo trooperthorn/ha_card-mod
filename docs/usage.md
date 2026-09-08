@@ -1,0 +1,489 @@
+# Styling reference
+
+This is the usage reference carried over from the upstream card-mod 4.2.1 README, kept here so the top-level README can stay short. The examples are unchanged except where a selector or element name changed in the frontend.
+
+## Usage
+
+### Styling cards
+
+Cards are styled by adding the following to the card configuration:
+
+```yaml
+card_mod:
+  style: <STYLES>
+```
+
+If the simplest form, `<STYLES>` is a string of [CSS](https://www.w3schools.com/css/) which will be injected into the appropriate element based on the card type. See [README-application](/README-application.md) for a detailed description on where card-mod is applied in version 4, which is slightly different from previous versions.
+
+> NOTE: card-mod only works on cards that are contained by a hui-card element, or contain a ha-card element. This includes almost every card standard Home Assistant Frontend cards, and most custom cards.
+>
+> For a card contained by a hui-card element, which is almost every standard Home Assistant Frontend card, styles are injected into a shadowRoot and the bottom most element is `:host`, though in most cases the first element in the shadowRoot is `ha-card`. For many custom cards which do not take advantage of the modern hui-root container, but contain a ha-card element, the styles are injected into ha-card and the bottommost element is `ha-card`. See [README-application](/README-application.md) for more details.
+
+> TIP: Home Assistant themes makes use of [CSS variables](https://www.w3schools.com/css/css3_variables.asp). Those can both be set and used in card-mod - prepended by two dashes:
+>
+> ```yaml
+> card_mod:
+>   style: |
+>     ha-card {
+>       --ha-card-background: teal;
+>       color: var(--primary-color);
+>     }
+> ```
+
+### Prepend option
+
+**Since 4.2.0, the issue that gives rise to needing prepend option should be automatically detected and applied**. card-mod version 4 has the `prepend` option that affects where card_mod styles are injected into the shadowRoot of the card. This is not normally required. However if a card renders in a way that initially has a 'Loading...' or similar initial state, before its final state, `prepend` may help. When `prepend` is `true`, card_mod styles are injected using the `prepend` function rather than the `append` function. The option is added at the same level as `style`.
+
+```yaml
+type: energy-distribution
+card_mod:
+  prepend: true
+  style: |
+    ha-card {
+      background: red;
+    }
+```
+
+Cards known to need `prepend` option are listed below. Generally these cards will initially have a non-card 'Loading...' state.
+
+- energy-distribution
+- energy-sankey
+- energy-sources-table
+- custom:alarmo-card
+- custom:button-state-card
+- custom:logbook-card
+
+<details>
+  <summary>Prepend examples</summary>
+  Take the following section config for `energy-sankey` with its companion `energy-date-selection`
+
+#### Without prepend
+
+```yaml
+type: grid
+cards:
+  - type: energy-date-selection
+  - type: energy-sankey
+    card_mod:
+      style: |
+        ha-card {
+          border-color: red;
+        }
+```
+
+Card_mod styles will not show on page load as although card_mod applies, it is removed by the next render of the card.
+
+<img width="1102" height="195" alt="Screenshot 2025-11-28 at 1 35 11 pm" src="https://github.com/user-attachments/assets/f1002b2c-6a34-41ba-8b02-bcd952138143" />
+
+#### With prepend: true
+
+```yaml
+type: grid
+cards:
+  - type: energy-date-selection
+  - type: energy-sankey
+    card_mod:
+      prepend: true # <- add prepend:true here
+      style: |
+        ha-card {
+          border-color: red;
+        }
+```
+
+card_mod styles will show correctly on page load.
+
+<img width="1118" height="195" alt="Screenshot 2025-11-28 at 1 37 22 pm" src="https://github.com/user-attachments/assets/72eaf841-3472-4f01-9591-6594b0889ae6" />
+
+</details>
+
+### Styling entities, badges and elements
+
+In `entities` and `glance` cards, [each entity can have options](https://www.home-assistant.io/lovelace/entities/#options-for-entities). Those elements can be styled individually by adding a `card_mod` parameter to the entity configuration.
+
+For those cases, the styles are injected into a shadowRoot, and the bottommost element is thus accessed through `:host`.
+
+This also applies to view badges and elements in `picture-elements` cards.
+
+```yaml
+type: entities
+entities:
+  - entity: light.bed_light
+    card_mod:
+      style: |
+        :host {
+          color: red;
+          }
+  - entity: light.ceiling_lights
+    card_mod:
+      style: |
+        :host {
+          color: green;
+        }
+  - entity: light.kitchen_lights
+    card_mod:
+      style: |
+        :host {
+          color: blue;
+        }
+```
+
+### Changing icons
+
+With card-mod installed, the `<ha-icon>` element - used e.g. by `entities`, `glance` and many more cards - will set it's icon to the value found in the CSS variable `--card-mod-icon` (if present).
+
+It will also set the icon color to the value found in the CSS variable `--card-mod-icon-color` if present. This ignores entity state, but will still dim unless you also set `--card-mod-icon-dim` to `none`.
+
+```yaml
+- entity: light.bed_light
+  card_mod:
+    style: |
+      :host {
+        --card-mod-icon: mdi:bed;
+      }
+```
+
+### Templates
+
+All styles may contain [jinja2 templates](https://www.home-assistant.io/docs/configuration/templating/) that will be processed by the Home Assistant backend.
+
+card-mod also makes the following variables available for templates:
+
+- `config` - The entire configuration of the card, entity or badge - (`config.entity` may be of special interest)
+- `user` - The name of the currently logged in user
+- `browser` - The `browser_id` of your browser, if you have [browser_mod](https://github.com/thomasloven/hass-browser_mod) installed
+- `hash` - Whatever comes after `#` in the current URL. card-mod watches for location changes through `location-changed` and `popstate` events so templates will be rebound with the updated `hash`
+- `panel` - various information about the panel in view, be it a lovelace dashboard or another panel view. `panel` is a dictionary containing the following panel attributes with example values shown.
+  - `panel.fullUrlPath`: "card-mod/another-test-view"
+  - `panel.panelComponentName`: "lovelace"
+  - `panel.panelIcon`: "mdi:card-bulleted-outline"
+  - `panel.panelNarrow`: true
+  - `panel.panelRequireAdmin`: false
+  - `panel.panelTitle`: "Card Mod"
+  - `panel.panelUrlPath`: "card-mod"
+  - `panel.panelTitle`: "Card Mod - Test View"
+  - `panel.viewNarrow`: true
+  - `panel.viewTitle`: "Test View"
+  - `panel.viewUrlPath`: "another-test-view"
+
+  You can debug card-mod jinja2 templates by placing the comment `{# card_mod.debug #}` anywhere in your template. You will see debug messages on template binding, value updated, reuse, unbinding and final ubsubscribing. Any template is kept subscribed in cache for a 20s cooldown period to assist with template application, which can bring a slight speed improvememts when switching back and forth to views, or using the same template on cards on different views.
+
+### DOM navigation
+
+Home Assistant makes extensive use of something called [shadow DOM](https://developer.mozilla.org/en-US/docs/Web/Web_Components/Using_shadow_DOM). This allows for easy reuse of components (such as `ha-card` or `ha-icon`) but causes some problems when trying to apply CSS styles to things.
+
+When exploring the cards in your browsers element inspector you may have come across a line that says something like "`#shadow-root (open)`" (exactly what it says depends on your browser) and have noticed that elements inside that does not inherit the styles from outside.
+
+In order to style elements inside a `#shadow-root`, you will need to make your `style:` a dictionary rather than a string.
+
+For each dictionary entry the key will be used to select one or several elements through a modified [`querySelector()`](https://developer.mozilla.org/en-US/docs/Web/API/Document/querySelector) function. The value of the entry will then be injected into those elements.
+
+> NOTE: The modified `querySelector()` function will replace a dollar sign (`$`) with a `#shadow-root` in the selector.
+
+The process is recursive, so the value may also be a dictionary. A key of "`.`" (a period) will select the current element.
+
+<details><summary>Example:</summary>
+
+Let's change the color of all third level titles (`### like this`) in a markdown card, and also change it's background.
+
+If we look at the card in the element inspector of chrome, it looks like this:
+
+![markdown-card-dom](https://user-images.githubusercontent.com/1299821/109172852-7f97ad80-7783-11eb-928d-21a41854c847.png)
+
+The `<ha-card>` element is the base, and from there we see that we need to go through one `#shadow-root` to reach the `<h3>`. That `#shadow-root` is inside an `<ha-markdown>` element, so our selector will be:
+
+```
+ha-markdown$
+```
+
+which will find the first `<ha-markdown>` element and then all `#shadow-root`s inside that.
+
+To add the background to the `<ha-card>`, we want to apply the styles to the base element directly, which has the key
+
+```
+.
+```
+
+This gives the final style:
+
+```yaml
+card_mod:
+  style:
+    ha-markdown$: |
+      h3 {
+        color: purple;
+      }
+    .: |
+      ha-card {
+        background: teal;
+      }
+```
+
+![DOM-navigation](https://user-images.githubusercontent.com/1299821/109188638-6b5bac80-7793-11eb-90b0-205b80d8fcdb.png)
+
+</details>
+
+> NOTE: The selector chain of the queue will look for one element at a time separated by spaces or "`$`". \
+> For each step, only the first match will be selected. \
+> But for the final selector of the chain (i.e. in a given dictionary key) **all** matching elements will be selected.
+> Chains ending with `$` is a special case for convenience, selecting the shadowroots of all elements.
+>
+> E.g. the following will select the `div` elements in the first marker on a map card:
+>
+> ```yaml
+> "ha-map $ ha-entity-marker $ div": |
+> ```
+>
+> But the following will select the div elements in all map markers on a map card (because we end the first key on the `ha-entity-marker $` selector and start a new search within each result for `div`):
+>
+> ```yaml
+> "ha-map $ ha-entity-marker $":
+>   "div": |
+> ```
+
+> NOTE 2: Following on the note above; due to the high level of load order optimization used in Home Assistant, it is not guaranteed that the `ha-entity-marker` elements exist at the time when card-mod is looking for them.
+> If you break the chain once more:
+>
+> ```yaml
+> "ha-map $":
+>   "ha-entity-marker $":
+>     "div": |
+> ```
+>
+> then card-mod will be able to retry looking from the `ha-map $` point at a later time, which may lead to more stable results.
+>
+> In short; if things seem to be working intermittently - try splitting up the chain into several steps.
+
+<details><summary>Debugging tips</summary>
+
+The DOM navigation can be tricky to get right the first few times, but you'll eventually get the hang of it.
+
+To help you, you can use your browsers Element inspector to see which steps card-mod takes.
+
+- Open up the element inspector and find the base element (e.g. `#shadow-root` or card contained by `<hui-card>` or `<ha-card>` contained by a custom card or other element. See [README-application](/README-application.md) for more details.). This should contain a `<card-mod>` element whether you specified a style or not.
+- Make sure the `<card-mod>` element is selected.
+- Open up the browsers console (in chrome you can press Esc to open the console and inspector at the same time).
+- Type in `$0.card_mod_input` and press enter. \
+  This is the style information that step of the chain was given. If this is a string, you're at the end of the chain. If it's an object, you can move on to the next step.
+- Type in `$0.card_mod_children` and press enter. \
+  This is a set of any `<card-mod>` elements in the next step of any chain. Clicking "card-mod" in the `value:` of the set items will bring you to that `<card-mod>` element in the inspector, and you can keep on inspecting the rest of the chain.
+- You can also use `$0.card_mod_parent` to find the parent of any `<card-mod>` element in a chain.
+
+For a bit more information, you can use the following in the configuration of the card you're having problems with. It may or may not help you.
+
+```yaml
+card_mod:
+  debug: true
+```
+
+You can also set debug via theme variables. See [README-themes.md](./README-themes.md)
+
+</details>
+
+### Styling cards without an `<ha-card>` element
+
+Cards that don't have a `<ha-element>` can still be styled by using the supplied `custom:mod-card` card.
+
+This is only necessary in **very very few** instances, and likely to bring more problems than it solves.
+
+Most likely your card contains another card, in which case **that** is the one you should apply the styles to.
+
+Enough warnings.
+
+<details><summary>I know what I'm doing</summary>
+
+```yaml
+type: custom:mod-card
+card:
+  type: custom:beloved-custom-card
+  ...
+card_mod:
+  style: |
+    ha-card {
+      ...
+    }
+```
+
+The mod-card will create a `<ha-card>` element and put your card inside that. If you wish to style the ha-card so that it is transparent, include the following style.
+
+```yaml
+type: custom:mod-card
+card:
+  type: custom:beloved-custom-card
+  ...
+card_mod:
+  style: |
+    ha-card {
+      background: none;
+      box-shadow: none;
+      border: none;
+      transition: none;
+    }
+```
+
+</details>
+
+### Styling entities conditional rows
+
+Rows in entities conditional rows can be styled directly. If you style the conditional config itself, you need to take care as the conditional row wrapper is not in a shadowRoot so styles may leak to other rows/elements.
+
+<details><summary>Conditional row examples</summary>
+Styling a conditional row directly. Only the entity row.
+
+```yaml
+type: entities
+state_color: true
+entities:
+  - type: conditional
+    conditions:
+      - condition: state
+        entity: input_boolean.test_boolean
+        state: "off"
+    row:
+      entity: sun.sun
+      name: Conditional Sun
+      card_mod:
+        style: |
+          :host {
+            color: red;
+          }
+```
+
+Styling a conditional row config using shadowRoot. This method is available for legacy configurations.
+
+```yaml
+type: entities
+state_color: true
+entities:
+  - type: conditional
+    conditions:
+      - condition: state
+        entity: input_boolean.test_boolean
+        state: "on"
+    row:
+      entity: sun.sun
+      name: Conditional Sun
+    card_mod:
+      style:
+        hui-simple-entity-row $ hui-generic-entity-row $: |
+          .row {
+            color: red;
+          }
+```
+
+Styling a conditional config where styles will 'leak' to all rows.
+
+```yaml
+type: entities
+state_color: true
+entities:
+  - type: conditional
+    conditions:
+      - condition: state
+        entity: input_boolean.test_boolean
+        state: "on"
+    row:
+      entity: sun.sun
+      name: Conditional Sun
+    card_mod:
+      style: |
+        :host {
+          --primary-text-color: red;
+        }
+```
+
+</details>
+
+### Styling picture-elements conditional elements
+
+The elements in a picture-elements conditional element can be styled directly. If you style the conditional config itself, you need to take care as the conditional element wrapper is not in a shadowRoot so styles may leak to other rows/elements.
+
+<details><summary>Conditional picture-elements example</summary>
+Styling a conditional element directly. Only the element.
+
+```yaml
+type: picture-elements
+image:
+  media_content_id: https://demo.home-assistant.io/stub_config/t-shirt-promo.png
+elements:
+  - type: conditional
+    conditions:
+      - entity: input_boolean.test_boolean
+        state: "on"
+    elements:
+      - type: state-badge
+        entity: sun.sun
+        style:
+          left: 25%
+          top: 25%
+        card_mod:
+          style: |
+            :host {
+              color: green;
+            }
+```
+
+Styling the conditional config. This method is available for legacy configurations.
+
+```yaml
+type: picture-elements
+image:
+  media_content_id: https://demo.home-assistant.io/stub_config/t-shirt-promo.png
+elements:
+  - type: conditional
+    conditions:
+      - entity: input_boolean.test_boolean
+        state: "on"
+    elements:
+      - type: state-badge
+        entity: sun.sun
+        style:
+          left: 25%
+          top: 25%
+    card_mod:
+      style:
+        hui-state-badge-element $ ha-state-label-badge $: |
+          :host {
+            color: red;
+          }
+```
+
+Styling the conditional config where styles will 'leak' to all elements.
+
+```yaml
+type: picture-elements
+image:
+  media_content_id: https://demo.home-assistant.io/stub_config/t-shirt-promo.png
+elements:
+  - type: conditional
+    conditions:
+      - entity: input_boolean.test_boolean
+        state: "on"
+    elements:
+      - type: state-badge
+        entity: sun.sun
+        style:
+          left: 25%
+          top: 25%
+    card_mod:
+      style: |
+        :host {
+          --primary-text-color: purple;
+        }
+```
+
+</details>
+
+## More examples
+
+All my test cases are available in the `test/views` directory.
+
+You can a demo in docker by going to the `test` directory and running:
+
+```
+docker-compose up
+```
+
+Then going to `http://localhost:8125` and logging in with username `dev` and password `dev`.
+
+Or you could use the vscode devcontainer and run the task "`Run hass`".
+

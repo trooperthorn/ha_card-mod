@@ -48,10 +48,7 @@ export class CardMod extends LitElement {
   _cancel_style_child: Array<(reason?: any) => void> = [];
 
   _observer: MutationObserver = new MutationObserver((mutations) => {
-    // MutationObserver to keep track of any changes to the parent element
-    // e.g. when elements are changed after creation.
-    // The observer is activated in _connect() only if there are any styles
-    //  which should be applied to children
+    // Observes the parent for child changes; only active while child paths are styled.
     if (this.debug) {
       this._debug("Mutations observed:", mutations);
     }
@@ -73,8 +70,7 @@ export class CardMod extends LitElement {
   });
 
   static get applyToElement() {
-    // This gets the compatibility wrapper for backwards compatibility with card-mod 3.3.
-    // The wrapper should be removed at earliest June 2024, or if card-mod 4.0 is released
+    // Public entry point for other cards; accepts the card-mod 3.3 signature.
     return apply_card_mod_compatible;
   }
 
@@ -356,10 +352,7 @@ if (!customElements.get("card-mod")) {
   window.dispatchEvent(new Event("card-mod-bootstrap"));
 }
 (async () => {
-  // Wait for scoped customElements registry to be set up
-  // and then redefine card-mod if necessary
-  // otherwise the customElements registry card-mod is defined in
-  // may get overwritten by the polyfill if card-mod is loaded as a module
+  // Re-define card-mod once the scoped registry polyfill has replaced customElements.
   while (customElements.get("home-assistant") === undefined)
     await new Promise((resolve) => window.setTimeout(resolve, 100));
 

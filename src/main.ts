@@ -36,35 +36,8 @@ for (const script of scriptElements) {
   }
 }
 
-if (resources.some((r) => r.includes("/card-mod.js"))) {
-  // console.info("Card-mod is loaded as a module");
-} else {
+if (!resources.some((r) => r.includes("/card-mod.js"))) {
   console.info(
     "You may not be getting optimal performance out of card-mod.\nSee https://github.com/thomasloven/lovelace-card-mod#performance-improvements",
   );
 }
-
-// const get_paths = (root, basepath = "") => {
-//   let paths = {};
-//   paths[`${basepath}`] = root;
-//   if (root.shadowRoot) {
-//     const pth = `${basepath} $`;
-//     paths[pth] = root.shadowRoot;
-//     const p = get_paths(root.shadowRoot, pth);
-//     Object.entries(p).forEach(([k, v]) => {
-//       if (paths[k] === undefined) paths[k] = v;
-//     });
-//   }
-//   for (const el of root.children) {
-//     const pth = `${basepath} ${el.localName}`;
-//     paths[pth] = el;
-//     const p = get_paths(el, pth);
-//     Object.entries(p).forEach(([k, v]) => {
-//       if (paths[k] === undefined) paths[k] = v;
-//     });
-//   }
-
-//   return paths;
-// };
-
-// (window as any).get_paths = get_paths;

@@ -2,10 +2,6 @@ import { patch_element } from "../helpers/patch_function";
 import { apply_card_mod } from "../helpers/apply_card_mod";
 import { ModdedElement } from "../helpers/apply_card_mod";
 
-/*
-Patch ha-assist-chip on first update
-*/
-
 @patch_element("ha-assist-chip")
 class HaAssistChipPatch extends ModdedElement {
   config;

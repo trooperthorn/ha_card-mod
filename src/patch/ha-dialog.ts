@@ -46,8 +46,7 @@ class HaDialogPatch extends ModdedElement {
 function patchDialog(ev: Event) {
   const dialogTag = (ev as CustomEvent).detail?.dialogTag;
 
-  // Home Assistant dialog manager reuses the same dialog element for dialogs of same tag
-  // so we can store params to use when patching
+  // The dialog manager reuses one element per tag, so params are cached by tag.
   const params = (ev as CustomEvent).detail?.dialogParams;
   if (params) {
     dialogParams[dialogTag] = stripHtmlAndFunctions(params);

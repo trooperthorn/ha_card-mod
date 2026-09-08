@@ -35,6 +35,9 @@ my-awesome-theme:
 - `card-mod-panel-custom`
 - `card-mod-top-app-bar-fixed`
 - `card-mod-dialog`
+- `card-mod-drawer`
+- `card-mod-grid-section`
+- `card-mod-tools` (the developer tools panel; `card-mod-developer-tools` is still read as an alias)
 
 Also `<any variable>-yaml`.
 
