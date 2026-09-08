@@ -52,6 +52,15 @@ jobs:
             echo "dist/card-mod.js is stale: run npm run build and commit the result" >&2
             exit 1
           fi
+      - name: Enforce the bundle size budget
+        # 95,304 bytes at v2026.09.08.1; a dependency bump must not double it unnoticed.
+        run: |
+          SIZE="$(wc -c < dist/card-mod.js)"
+          echo "dist/card-mod.js is ${SIZE} bytes"
+          if [ "$SIZE" -gt 112640 ]; then
+            echo "dist/card-mod.js exceeds the 110 KiB budget; see docs/backlog.md" >&2
+            exit 1
+          fi
 
   hacs:
     # Informational: hacs/action also enforces default-store requirements
