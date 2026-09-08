@@ -21,6 +21,8 @@ declare global {
   }
 }
 
+let themeWarningLogged = false;
+
 export class CardMod extends LitElement {
   @property({ attribute: "card-mod-type", reflect: true }) type: string;
   variables: any;
@@ -72,23 +74,21 @@ export class CardMod extends LitElement {
     return apply_card_mod_compatible;
   }
 
-  constructor() {
-    super();
-
-    // cm_update is issued when themes are reloaded
-    document.addEventListener("cm_update", (ev: CustomEvent) => {
-      // Don't process disconnected elements
-      this.dynamicVariablesHaveChanged = ev.detail?.variablesChanged || false;
-      if (!this.isConnected) {
-        this._processStylesOnConnect = true;
-        return;
-      }
-      this._process_styles(this.card_mod_input);
-    });
-  }
+  _cmUpdateListener = (ev: Event) => {
+    this.dynamicVariablesHaveChanged =
+      (ev as CustomEvent).detail?.variablesChanged || false;
+    if (!this.isConnected) {
+      this._processStylesOnConnect = true;
+      return;
+    }
+    this._process_styles(this.card_mod_input).catch((e) =>
+      this._debug("_process_styles failed:", e),
+    );
+  };
 
   connectedCallback() {
     super.connectedCallback();
+    document.addEventListener("cm_update", this._cmUpdateListener);
     if (this._processStylesOnConnect) {
       this._processStylesOnConnect = false;
       this._debug("Processing styles on (Re)connect:", 
@@ -99,7 +99,9 @@ export class CardMod extends LitElement {
         ? ["#shadow-root of:", (this as any)?.parentNode?.host]
         : [this.parentElement ?? this.parentNode]),
       );
-      this._process_styles(this.card_mod_input);
+      this._process_styles(this.card_mod_input).catch((e) =>
+      this._debug("_process_styles failed:", e),
+    );
     } else {
       this.refresh();
     }
@@ -112,6 +114,12 @@ export class CardMod extends LitElement {
   disconnectedCallback() {
     super.disconnectedCallback();
     this._disconnect();
+    // DOM moves disconnect and reconnect synchronously; only a node still detached afterwards unsubscribes.
+    Promise.resolve().then(() => {
+      if (this.isConnected) return;
+      document.removeEventListener("cm_update", this._cmUpdateListener);
+      this._processStylesOnConnect = true;
+    });
   }
 
   set styles(stl: CardModStyle) {
@@ -123,7 +131,9 @@ export class CardMod extends LitElement {
       this._processStylesOnConnect = true;
       return;
     }
-    this._process_styles(stl);
+    this._process_styles(stl).catch((e) =>
+      this._debug("_process_styles failed:", e),
+    );
   }
 
   get styles(): CardModStyle {
@@ -148,8 +158,18 @@ export class CardMod extends LitElement {
     let styles =
       typeof stl === "string" || stl === undefined ? { ".": stl ?? "" } : JSON.parse(JSON.stringify(stl));
 
-    // Merge card_mod styles with theme styles
-    const theme_styles = await get_theme(this);
+    let theme_styles: CardModStyle = {};
+    try {
+      theme_styles = (await get_theme(this)) ?? {};
+    } catch (e) {
+      if (!themeWarningLogged) {
+        themeWarningLogged = true;
+        console.warn(
+          "CARD-MOD: theme styles unavailable, applying card_mod config only:",
+          e,
+        );
+      }
+    }
     merge_deep(styles, theme_styles);
 
     // Save processed styles
